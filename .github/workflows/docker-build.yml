@@ -1,0 +1,39 @@
+name: docker-build
+
+on:
+  push:
+
+env:
+  HEADLAMP_PLUGINS_VERSION: flux-0.2.0
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tools repo
+        uses: actions/checkout@v4
+        with:
+          repository: headlamp-k8s/plugins
+          ref: ${{ env.HEADLAMP_PLUGINS_VERSION }}
+          path: plugins
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: plugins
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: stoub/headlamp-plugin-flux:${{ env.HEADLAMP_PLUGINS_VERSION }}
+          build-args: PLUGIN=flux
